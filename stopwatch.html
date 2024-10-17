@@ -1,0 +1,319 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Stopwatch</title>
+    <link rel="icon" type="image/x-icon" href="https://www.svgrepo.com/show/195110/clock.svg">
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Azeret+Mono&family=Syne:wght@600&display=swap" rel="stylesheet">
+    <style>
+        html, body {
+            margin: 0;
+            padding: 0;
+        }
+
+        body {
+            font-family: Syne, sans-serif;
+            height: 100svh;
+            overflow: hidden;
+        }
+
+        .loading,
+        .bg-wrapper,
+        .page-container {
+            position: absolute;
+            left: 0;
+            top: 0;
+            width: 100%;
+            height: 100%;
+        }
+
+        .loading {
+            display: grid;
+            place-content: center;
+            background: #dedede;
+        }
+
+        .page-container {
+            scale: 0;
+            transition: scale 1s cubic-bezier(0.175, 0.885, 0.32, 1.275);
+            display: grid;
+            place-content: center;
+        }
+        
+        .bg-wrapper {
+            background: radial-gradient(#333, #888 50%, transparent);            
+            mix-blend-mode: multiply;
+            z-index: -1;
+            
+        }
+        
+        #bg-1,
+        #bg-2 {
+            width: 100%;
+            height: 100%;
+            object-fit: cover;
+            object-position: center;
+            z-index: -1;
+            transition: opacity 1s;
+        }
+
+        .stopwatch-container {
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            row-gap: 2em;
+            padding: 1.5em;
+            color: #fff;
+        }
+
+        h1 {
+            font-size: min(5rem, 15vw);
+            margin: 0;
+        }
+
+        #time {
+            display: flex;
+            align-items: center;
+            font-family: 'Azeret Mono', monospace;
+            font-size: min(1.5rem, 5vw);
+        
+        }
+
+        .time-value {
+            font-size: 2em;
+            width: 2em;
+            text-align: center;
+            border: none;
+            border-radius: 5px;
+            margin: 0;
+        }
+
+        .divider {
+            display: grid;
+            place-content: center;
+            padding: .2em;
+            display: flex;
+            flex-direction: column;
+            row-gap: .2em;
+        }
+
+        .dot {
+            width: 5px;
+            aspect-ratio: 1;
+            background: #fff;
+            border-radius: 50%;
+        }
+
+        
+        #buttons-container {
+            display: flex;
+            justify-content: center;
+            gap: 1em;
+        }
+
+        button {
+            padding: 10px 20px;
+            cursor: pointer;
+            border: none;
+            border-radius: 5px;
+            color: #fff;
+            font-size: 1rem;
+            font-weight: bold;
+            letter-spacing: .06em;
+            transition:
+                filter .25s ease-in-out,
+                color .25s ease-in-out,
+                scale .25s ease-in-out;
+        }
+
+        button#start {
+            background: rgb(34, 82, 55);
+        }
+
+        button#pause {
+            background: rgb(34, 69, 96);
+        }
+
+        button#reset {
+            background: rgb(71, 31, 83);
+        }
+
+        button:hover {
+            filter: brightness(1.5);
+            color: #ccc;
+            scale: 1.05;
+        }
+    </style>
+</head>
+<body>
+    <div class="loading">
+        <svg width="48" height="48" stroke="#000" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg">
+            <style>
+              .spinner_V8m1{transform-origin:center;animation:spinner_zKoa 2s linear infinite}
+              .spinner_V8m1 circle{stroke-linecap:round;animation:spinner_YpZS 1.5s ease-in-out infinite}
+              @keyframes spinner_zKoa{100%{transform:rotate(360deg)}}
+              @keyframes spinner_YpZS{0%{stroke-dasharray:0 150;stroke-dashoffset:0}47.5%{stroke-dasharray:42 150;stroke-dashoffset:-16}95%,100%{stroke-dasharray:42 150;stroke-dashoffset:-59}}
+            </style>
+            <g class="spinner_V8m1">
+              <circle cx="12" cy="12" r="9.5" fill="none" stroke-width="3"></circle>
+            </g>
+        </svg>
+    </div>
+
+    <div class="page-container">
+        <div class="bg-wrapper"><img id="bg-1" alt="background"></div>
+        <div class="bg-wrapper"><img id="bg-2" alt="background"></div>
+        <div class="stopwatch-container">
+            <h1>Stopwatch</h1>
+            <div id="time">
+                <div id="hours" class="time-value">00</div>
+                <div class="divider">
+                    <div class="dot"></div>
+                    <div class="dot"></div>
+                </div>
+                <div id="minutes" class="time-value">00</div>
+                <div class="divider">
+                    <div class="dot"></div>
+                    <div class="dot"></div>
+                </div>        
+                <div id="seconds" class="time-value">00</div>
+            </div>
+
+            <div id="buttons-container">
+                <button id="start">Start</button>
+                <button id="pause">Pause</button>
+                <button id="reset">Reset</button>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        const SECONDS_TO_CHANGE_IMAGE = 60 // 1 minute
+
+        let startTime = Date.now();
+        let elapsedTime = 0;
+        let timerInterval;
+        let isRunning = false;
+        let currentImageNum = 1;
+        let isLoading = true;
+
+        const bgImages = [
+            'https://plus.unsplash.com/premium_photo-1680265343689-0d8a86d1a97a?q=80&w=1974&auto=format&fit=crop&ixlib=rb-4.0.3&ixid=M3wxMjA3fDB8MHxwaG90by1wYWdlfHx8fGVufDB8fHx8fA%3D%3D',
+            'https://plus.unsplash.com/premium_photo-1661553008975-40cc0aa64b95?q=80&w=1932&auto=format&fit=crop&ixlib=rb-4.0.3&ixid=M3wxMjA3fDB8MHxwaG90by1wYWdlfHx8fGVufDB8fHx8fA%3D%3D',
+            'https://images.unsplash.com/photo-1499377193864-82682aefed04?q=80&w=1782&auto=format&fit=crop&ixlib=rb-4.0.3&ixid=M3wxMjA3fDB8MHxwaG90by1wYWdlfHx8fGVufDB8fHx8fA%3D%3D',
+            'https://images.unsplash.com/photo-1431499012454-31a9601150c9?q=80&w=2070&auto=format&fit=crop&ixlib=rb-4.0.3&ixid=M3wxMjA3fDB8MHxwaG90by1wYWdlfHx8fGVufDB8fHx8fA%3D%3D',
+            'https://images.unsplash.com/photo-1447015237013-0e80b2786ddc?q=80&w=2070&auto=format&fit=crop&ixlib=rb-4.0.3&ixid=M3wxMjA3fDB8MHxwaG90by1wYWdlfHx8fGVufDB8fHx8fA%3D%3D',
+            'https://images.unsplash.com/photo-1506452819137-0422416856b8?q=80&w=1973&auto=format&fit=crop&ixlib=rb-4.0.3&ixid=M3wxMjA3fDB8MHxwaG90by1wYWdlfHx8fGVufDB8fHx8fA%3D%3D',
+            'https://images.unsplash.com/photo-1489844981779-7f06e8e0fdbb?q=80&w=1932&auto=format&fit=crop&ixlib=rb-4.0.3&ixid=M3wxMjA3fDB8MHxwaG90by1wYWdlfHx8fGVufDB8fHx8fA%3D%3D',
+            'https://plus.unsplash.com/premium_photo-1680265343643-6994bdb74dd7?q=80&w=1974&auto=format&fit=crop&ixlib=rb-4.0.3&ixid=M3wxMjA3fDB8MHxwaG90by1wYWdlfHx8fGVufDB8fHx8fA%3D%3D',
+            'https://images.unsplash.com/photo-1605693858835-602979e9b200?q=80&w=2070&auto=format&fit=crop&ixlib=rb-4.0.3&ixid=M3wxMjA3fDB8MHxwaG90by1wYWdlfHx8fGVufDB8fHx8fA%3D%3D',
+            'https://images.unsplash.com/photo-1428660285748-340f4e33d608?q=80&w=1974&auto=format&fit=crop&ixlib=rb-4.0.3&ixid=M3wxMjA3fDB8MHxwaG90by1wYWdlfHx8fGVufDB8fHx8fA%3D%3D',
+            'https://images.unsplash.com/photo-1457883626133-458e5ec26948?q=80&w=2070&auto=format&fit=crop&ixlib=rb-4.0.3&ixid=M3wxMjA3fDB8MHxwaG90by1wYWdlfHx8fGVufDB8fHx8fA%3D%3D',
+            'https://images.unsplash.com/photo-1533603905650-c873cb508859?q=80&w=2070&auto=format&fit=crop&ixlib=rb-4.0.3&ixid=M3wxMjA3fDB8MHxwaG90by1wYWdlfHx8fGVufDB8fHx8fA%3D%3D',
+            'https://images.unsplash.com/photo-1446937179942-7fcfab24fb81?q=80&w=2073&auto=format&fit=crop&ixlib=rb-4.0.3&ixid=M3wxMjA3fDB8MHxwaG90by1wYWdlfHx8fGVufDB8fHx8fA%3D%3D',
+            'https://images.unsplash.com/photo-1499290731724-12e120cfaef3?q=80&w=2070&auto=format&fit=crop&ixlib=rb-4.0.3&ixid=M3wxMjA3fDB8MHxwaG90by1wYWdlfHx8fGVufDB8fHx8fA%3D%3D',
+            'https://images.unsplash.com/photo-1436076838903-fd4dd41d99c4?q=80&w=2070&auto=format&fit=crop&ixlib=rb-4.0.3&ixid=M3wxMjA3fDB8MHxwaG90by1wYWdlfHx8fGVufDB8fHx8fA%3D%3D',
+            'https://images.unsplash.com/photo-1506686098657-5eeb165b4353?q=80&w=2070&auto=format&fit=crop&ixlib=rb-4.0.3&ixid=M3wxMjA3fDB8MHxwaG90by1wYWdlfHx8fGVufDB8fHx8fA%3D%3D'
+        ]
+
+        const getImageElement = (num) => document.querySelector(`#bg-${num}`);
+
+        const stopLoading = () => {
+            const loadingElement = document.querySelector('.loading');
+            if (loadingElement) {
+                document.querySelector('.page-container').style.scale = 1;
+                setTimeout(() => {
+                    loadingElement.remove();                    
+                }, 1000);
+            }
+            isLoading = false;
+        }
+
+        const setBgImage = (num) => {
+            const thisImageElement = getImageElement(num);
+            const otherImageElement = getImageElement(num === 1 ? 2 : 1);
+            const unusedSrcs = bgImages.filter(src => src !== thisImageElement.src && src !== otherImageElement.src);
+            const randomIndex = Math.floor(Math.random() * unusedSrcs.length);
+            thisImageElement.src = unusedSrcs[randomIndex];
+            
+            return [thisImageElement, otherImageElement];
+        }
+
+        const switchImage = () => {
+            const [thisImageElement, otherImageElement] = setBgImage(currentImageNum);
+
+            thisImageElement.onload = () => {
+                setTimeout(() => {
+                    thisImageElement.style.opacity = 1;
+                    otherImageElement.style.opacity = 0;
+                    currentImageNum = currentImageNum === 1 ? 2 : 1;                    
+                    if (isLoading) {
+                        stopLoading();
+                    }
+                }, 1000);
+            }
+
+        }
+
+        switchImage();
+
+        const hoursElement = document.getElementById('hours');
+        const minutesElement = document.getElementById('minutes');
+        const secondsElement = document.getElementById('seconds');
+        
+        const formatNumber = (value) => value.toString().padStart(2, '0');
+        
+        const updateElapsedTime = () => {
+            elapsedTime = Math.round((Date.now() - startTime) / 1000); // in seconds
+        }
+
+        function updateTimeValues(preventImageReset = false) {
+            updateElapsedTime();
+            
+            if (!preventImageReset && elapsedTime % (SECONDS_TO_CHANGE_IMAGE) === 0) { // every 10 minutes
+                switchImage();
+            }
+
+            const hours = Math.floor(elapsedTime / 60 / 60);
+            const minutes = Math.floor(elapsedTime / 60 - (hours * 60));
+            const seconds = elapsedTime % 60;
+            hoursElement.textContent = formatNumber(hours);
+            minutesElement.textContent = formatNumber(minutes);
+            secondsElement.textContent = formatNumber(seconds);
+        }
+
+        function startStopwatch() {
+            if (isRunning) {
+                return;
+            }
+
+            startTime = Date.now() - (elapsedTime * 1000);
+            isRunning = true;
+            updateTimeValues(true);
+            timerInterval = setInterval(() => {
+                updateTimeValues();
+            }, 1000);
+        }
+
+        function pauseStopwatch() {
+            clearInterval(timerInterval);
+            isRunning = false;
+        }
+
+        function resetStopwatch() {
+            clearInterval(timerInterval);
+            isRunning = false;
+            startTime = Date.now();
+            updateTimeValues();
+        }
+
+        document.getElementById('start').addEventListener('click', startStopwatch);
+        document.getElementById('pause').addEventListener('click', pauseStopwatch);
+        document.getElementById('reset').addEventListener('click', resetStopwatch);
+    </script>
+
+</body>
+</html>
