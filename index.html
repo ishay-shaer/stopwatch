@@ -37,17 +37,16 @@
         }
 
         .page-container {
-            scale: 0;
-            transition: scale 1s cubic-bezier(0.175, 0.885, 0.32, 1.275);
             display: grid;
             place-content: center;
+            scale: 0;
+            transition: scale 1s cubic-bezier(0.175, 0.885, 0.32, 1.275);
         }
         
         .bg-wrapper {
             background: radial-gradient(#333, #888 50%, transparent);            
             mix-blend-mode: multiply;
             z-index: -1;
-            transition: filter .3s ease-in-out;
         }
         
         #bg-1,
@@ -56,7 +55,6 @@
             height: 100%;
             object-fit: cover;
             object-position: center;
-            z-index: -1;
             transition: opacity 1s;
         }
 
