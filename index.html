@@ -189,7 +189,8 @@
     </div>
 
     <script>
-        const SECONDS_TO_CHANGE_IMAGE = 60 // 1 minute
+        const SECONDS_TO_CHANGE_IMAGE = 60; // 1 minute
+        const SEC_IN_MS = 1000, MIN_IN_MS = SEC_IN_MS * 60, HOUR_IN_MS = MIN_IN_MS * 60;
 
         let startTime = Date.now();
         let elapsedTime = 0;
@@ -265,22 +266,24 @@
         const formatNumber = (value) => value.toString().padStart(2, '0');
         
         const updateElapsedTime = () => {
-            elapsedTime = Math.round((Date.now() - startTime) / 1000); // in seconds
+            elapsedTime = Math.round((Date.now() - startTime)); // in seconds
         }
 
-        function updateTimeValues(preventImageReset = false) {
+        function updateTimeValues() {
             updateElapsedTime();
-            
-            if (!preventImageReset && elapsedTime % (SECONDS_TO_CHANGE_IMAGE) === 0) { // every 10 minutes
-                switchImage();
-            }
 
-            const hours = Math.floor(elapsedTime / 60 / 60);
-            const minutes = Math.floor(elapsedTime / 60 - (hours * 60));
-            const seconds = elapsedTime % 60;
+            const hours = Math.floor(elapsedTime / HOUR_IN_MS);
+            const totalMinutes = Math.floor(elapsedTime / MIN_IN_MS);
+            const minutes = totalMinutes - (hours * 60);
+            const totalSeconds = Math.floor(elapsedTime / SEC_IN_MS);
+            const seconds = totalSeconds - (totalMinutes * 60);
             hoursElement.textContent = formatNumber(hours);
             minutesElement.textContent = formatNumber(minutes);
             secondsElement.textContent = formatNumber(seconds);
+
+            if (seconds === 0 && totalSeconds > 0) { // every 1 minute
+                switchImage();
+            }
         }
 
         function startStopwatch() {
@@ -288,9 +291,9 @@
                 return;
             }
 
-            startTime = Date.now() - (elapsedTime * 1000);
+            startTime = Date.now() - elapsedTime;
             isRunning = true;
-            updateTimeValues(true);
+            updateTimeValues();
             timerInterval = setInterval(() => {
                 updateTimeValues();
             }, 1000);
