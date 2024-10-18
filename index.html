@@ -218,8 +218,8 @@
         const SEC_IN_MS = 1000, MIN_IN_MS = SEC_IN_MS * 60, HOUR_IN_MS = MIN_IN_MS * 60;
 
         let startTime = Date.now();
+        let lastTime = startTime;
         let elapsedTime = 0;
-        let timerInterval;
         let isRunning = false;
         let currentImageNum = 1;
         let isLoading = true;
@@ -301,6 +301,22 @@
             }
         }
 
+        function tick() {
+            if (!isRunning) {
+                return;
+            }
+            
+            const now = Date.now();
+            const delta = now - lastTime;
+
+            if (delta >= 1000) {
+                lastTime = now - (delta % 1000);
+                updateTimeValues();
+            }
+            
+            requestAnimationFrame(tick);
+        }
+
         function swapDynamicBtnRole() {
             const btnText = dynamicBtn.textContent;
             dynamicBtn.textContent = dynamicBtnChanges[btnText].text;
@@ -313,23 +329,20 @@
                 return;
             }
 
-            startTime = Date.now() - elapsedTime;
+            lastTime = Date.now()
+            startTime = lastTime - elapsedTime;
             isRunning = true;
             updateTimeValues();
-            timerInterval = setInterval(() => {
-                updateTimeValues();
-            }, 1000);
+            requestAnimationFrame(tick);
             swapDynamicBtnRole();
         }
         
         function pauseStopwatch() {
-            clearInterval(timerInterval);
             isRunning = false;
             swapDynamicBtnRole();
         }
 
         function resetStopwatch() {
-            clearInterval(timerInterval);
             isRunning = false;
             startTime = Date.now();
             updateTimeValues();
