@@ -35,6 +35,8 @@
             display: grid;
             place-content: center;
             background: #dedede;
+            opacity: 1;
+            transition: opacity .9s linear;
         }
 
         .page-container {
@@ -109,7 +111,7 @@
         #buttons-container {
             display: flex;
             justify-content: center;
-            gap: 1em;
+            gap: 2em;
         }
 
         button {
@@ -127,12 +129,9 @@
                 scale .25s ease-in-out;
         }
 
-        button#start {
+        button#start-pause {
             background: rgb(34, 82, 55);
-        }
-
-        button#pause {
-            background: rgb(34, 69, 96);
+            width: 108px;
         }
 
         button#reset {
@@ -179,8 +178,8 @@
             </div>
 
             <div id="buttons-container">
-                <button id="start">Start</button>
-                <button id="pause">Pause</button>
+                <button id="start-pause">Start</button>
+                <!-- <button id="pause">Pause</button> -->
                 <button id="reset">Reset</button>
             </div>
         </div>
@@ -188,16 +187,7 @@
         <div class="bg-wrapper"><img id="bg-2" alt="background"></div>
     </div>
 
-    <script>
-        const SEC_IN_MS = 1000, MIN_IN_MS = SEC_IN_MS * 60, HOUR_IN_MS = MIN_IN_MS * 60;
-
-        let startTime = Date.now();
-        let elapsedTime = 0;
-        let timerInterval;
-        let isRunning = false;
-        let currentImageNum = 1;
-        let isLoading = true;
-
+    <script>        
         const bgImages = [
             'https://plus.unsplash.com/premium_photo-1680265343689-0d8a86d1a97a?q=80&w=1974&auto=format&fit=crop&ixlib=rb-4.0.3&ixid=M3wxMjA3fDB8MHxwaG90by1wYWdlfHx8fGVufDB8fHx8fA%3D%3D',
             'https://plus.unsplash.com/premium_photo-1661553008975-40cc0aa64b95?q=80&w=1932&auto=format&fit=crop&ixlib=rb-4.0.3&ixid=M3wxMjA3fDB8MHxwaG90by1wYWdlfHx8fGVufDB8fHx8fA%3D%3D',
@@ -225,15 +215,33 @@
             'https://images.unsplash.com/photo-1488132828189-4e416661b680?q=80&w=2070&auto=format&fit=crop&ixlib=rb-4.0.3&ixid=M3wxMjA3fDB8MHxwaG90by1wYWdlfHx8fGVufDB8fHx8fA%3D%3D'
         ]
 
+        const SEC_IN_MS = 1000, MIN_IN_MS = SEC_IN_MS * 60, HOUR_IN_MS = MIN_IN_MS * 60;
+
+        let startTime = Date.now();
+        let elapsedTime = 0;
+        let timerInterval;
+        let isRunning = false;
+        let currentImageNum = 1;
+        let isLoading = true;
+
+        const dynamicBtn = document.querySelector('#start-pause');
+
+        const dynamicBtnChanges = {
+            Start: { text: 'Pause', fnToRemove: startStopwatch, fnToAdd: pauseStopwatch },
+            Pause: { text: 'Resume', fnToRemove: pauseStopwatch, fnToAdd: startStopwatch },
+            Resume: { text: 'Pause', fnToRemove: startStopwatch, fnToAdd: pauseStopwatch }
+        }
+
         const getImageElement = (num) => document.querySelector(`#bg-${num}`);
 
         const stopLoading = () => {
             const loadingElement = document.querySelector('.loading');
             if (loadingElement) {
                 document.querySelector('.page-container').style.transform = 'none';
+                loadingElement.style.opacity = 0;
                 setTimeout(() => {
                     loadingElement.remove();                    
-                }, 1000);
+                }, 2000);
             }
             isLoading = false;
         }
@@ -266,9 +274,9 @@
 
         switchImage();
 
-        const hoursElement = document.getElementById('hours');
-        const minutesElement = document.getElementById('minutes');
-        const secondsElement = document.getElementById('seconds');
+        const hoursElement = document.querySelector('#hours');
+        const minutesElement = document.querySelector('#minutes');
+        const secondsElement = document.querySelector('#seconds');
         
         const formatNumber = (value) => value.toString().padStart(2, '0');
         
@@ -293,6 +301,13 @@
             }
         }
 
+        function swapDynamicBtnRole() {
+            const btnText = dynamicBtn.textContent;
+            dynamicBtn.textContent = dynamicBtnChanges[btnText].text;
+            dynamicBtn.removeEventListener('click', dynamicBtnChanges[btnText].fnToRemove);
+            dynamicBtn.addEventListener('click', dynamicBtnChanges[btnText].fnToAdd);
+        }
+
         function startStopwatch() {
             if (isRunning) {
                 return;
@@ -304,11 +319,13 @@
             timerInterval = setInterval(() => {
                 updateTimeValues();
             }, 1000);
+            swapDynamicBtnRole();
         }
-
+        
         function pauseStopwatch() {
             clearInterval(timerInterval);
             isRunning = false;
+            swapDynamicBtnRole();
         }
 
         function resetStopwatch() {
@@ -316,11 +333,14 @@
             isRunning = false;
             startTime = Date.now();
             updateTimeValues();
+            dynamicBtn.textContent = 'Start';
+            dynamicBtn.removeEventListener('click', pauseStopwatch);
+            dynamicBtn.removeEventListener('click', startStopwatch);
+            dynamicBtn.addEventListener('click', startStopwatch);
         }
 
-        document.getElementById('start').addEventListener('click', startStopwatch);
-        document.getElementById('pause').addEventListener('click', pauseStopwatch);
-        document.getElementById('reset').addEventListener('click', resetStopwatch);
+        dynamicBtn.addEventListener('click', startStopwatch);
+        document.querySelector('#reset').addEventListener('click', resetStopwatch);
     </script>
 
 </body>
