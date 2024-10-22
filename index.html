@@ -324,10 +324,10 @@
                 newBtnType = 'start';
                 newBtnText = elapsedTime === 0 ? 'Start' : 'Resume';
             }
-            
+
             dynamicBtn.textContent = newBtnText;
-            dynamicBtn.removeEventListener('click', dynamicBtnFns[btnType].fnToRemove);
-            dynamicBtn.addEventListener('click', dynamicBtnFns[btnType].fnToAdd);
+            dynamicBtn.removeEventListener('click', dynamicBtnFns[newBtnType].fnToRemove);
+            dynamicBtn.addEventListener('click', dynamicBtnFns[newBtnType].fnToAdd);
         }
 
         function startStopwatch() {
