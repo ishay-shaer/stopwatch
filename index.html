@@ -217,8 +217,9 @@
 
         const SEC_IN_MS = 1000, MIN_IN_MS = SEC_IN_MS * 60, HOUR_IN_MS = MIN_IN_MS * 60;
 
-        let startTime = performance.now();
-        let lastTime = startTime;
+        const getCurrentTime = () => performance.now();
+
+        let startTime = getCurrentTime();
         let elapsedTime = 0;
         let isRunning = false;
         let currentImageNum = 1;
@@ -226,10 +227,9 @@
 
         const dynamicBtn = document.querySelector('#start-pause');
 
-        const dynamicBtnChanges = {
-            Start: { text: 'Pause', fnToRemove: startStopwatch, fnToAdd: pauseStopwatch },
-            Pause: { text: 'Resume', fnToRemove: pauseStopwatch, fnToAdd: startStopwatch },
-            Resume: { text: 'Pause', fnToRemove: startStopwatch, fnToAdd: pauseStopwatch }
+        const dynamicBtnFns = {
+            start: { fnToRemove: pauseStopwatch, fnToAdd: startStopwatch },
+            pause: { fnToRemove: startStopwatch, fnToAdd: pauseStopwatch }
         }
 
         const getImageElement = (num) => document.querySelector(`#bg-${num}`);
@@ -281,12 +281,10 @@
         const formatNumber = (value) => value.toString().padStart(2, '0');
         
         const updateElapsedTime = () => {
-            elapsedTime = Math.round((performance.now() - startTime)); // in seconds
+            elapsedTime = getCurrentTime() - startTime;
         }
 
         function updateTimeValues() {
-            updateElapsedTime();
-
             const hours = Math.floor(elapsedTime / HOUR_IN_MS);
             const totalMinutes = Math.floor(elapsedTime / MIN_IN_MS);
             const minutes = totalMinutes - (hours * 60);
@@ -305,12 +303,12 @@
             if (!isRunning) {
                 return;
             }
+            updateElapsedTime();
             
-            const now = performance.now();
-            const delta = now - lastTime;
+            const now = getCurrentTime();
+            const delta = now - elapsedTime;
 
             if (delta >= 1000) {
-                lastTime = now - (delta % 1000);
                 updateTimeValues();
             }
             
@@ -318,10 +316,18 @@
         }
 
         function swapDynamicBtnRole() {
-            const btnText = dynamicBtn.textContent;
-            dynamicBtn.textContent = dynamicBtnChanges[btnText].text;
-            dynamicBtn.removeEventListener('click', dynamicBtnChanges[btnText].fnToRemove);
-            dynamicBtn.addEventListener('click', dynamicBtnChanges[btnText].fnToAdd);
+            let newBtnText, newBtnType;
+            if (isRunning) {
+                newBtnType = 'pause';
+                newBtnText = 'Pause';
+            } else {
+                newBtnType = 'start';
+                newBtnText = elapsedTime === 0 ? 'Start' : 'Resume';
+            }
+            
+            dynamicBtn.textContent = newBtnText;
+            dynamicBtn.removeEventListener('click', dynamicBtnFns[btnType].fnToRemove);
+            dynamicBtn.addEventListener('click', dynamicBtnFns[btnType].fnToAdd);
         }
 
         function startStopwatch() {
@@ -329,8 +335,7 @@
                 return;
             }
 
-            lastTime = performance.now()
-            startTime = lastTime - elapsedTime;
+            startTime = getCurrentTime() - elapsedTime;
             isRunning = true;
             updateTimeValues();
             requestAnimationFrame(tick);
@@ -344,12 +349,10 @@
 
         function resetStopwatch() {
             isRunning = false;
-            startTime = performance.now();
+            startTime = getCurrentTime();
+            elapsedTime = 0;
             updateTimeValues();
-            dynamicBtn.textContent = 'Start';
-            dynamicBtn.removeEventListener('click', pauseStopwatch);
-            dynamicBtn.removeEventListener('click', startStopwatch);
-            dynamicBtn.addEventListener('click', startStopwatch);
+            swapDynamicBtnRole();
         }
 
         dynamicBtn.addEventListener('click', startStopwatch);
