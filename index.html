@@ -217,7 +217,7 @@
 
         const SEC_IN_MS = 1000, MIN_IN_MS = SEC_IN_MS * 60, HOUR_IN_MS = MIN_IN_MS * 60;
 
-        let startTime = Date.now();
+        let startTime = performance.now();
         let lastTime = startTime;
         let elapsedTime = 0;
         let isRunning = false;
@@ -281,7 +281,7 @@
         const formatNumber = (value) => value.toString().padStart(2, '0');
         
         const updateElapsedTime = () => {
-            elapsedTime = Math.round((Date.now() - startTime)); // in seconds
+            elapsedTime = Math.round((performance.now() - startTime)); // in seconds
         }
 
         function updateTimeValues() {
@@ -306,7 +306,7 @@
                 return;
             }
             
-            const now = Date.now();
+            const now = performance.now();
             const delta = now - lastTime;
 
             if (delta >= 1000) {
@@ -329,7 +329,7 @@
                 return;
             }
 
-            lastTime = Date.now()
+            lastTime = performance.now()
             startTime = lastTime - elapsedTime;
             isRunning = true;
             updateTimeValues();
@@ -344,7 +344,7 @@
 
         function resetStopwatch() {
             isRunning = false;
-            startTime = Date.now();
+            startTime = performance.now();
             updateTimeValues();
             dynamicBtn.textContent = 'Start';
             dynamicBtn.removeEventListener('click', pauseStopwatch);
